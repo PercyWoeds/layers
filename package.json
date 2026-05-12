@@ -1,0 +1,11 @@
+{
+  "name": "mp-cuotas-alfombras",
+  "version": "1.0.0",
+  "description": "Función serverless para crear preferencias de Mercado Pago con cuotas para alfombras",
+  "dependencies": {
+    "mercadopago": "^2.0.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
