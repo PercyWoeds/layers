@@ -56,7 +56,7 @@ module.exports = async function handler(req, res) {
         title:       item.title,
         quantity:    item.quantity,
         unit_price:  item.price / 100,   // Shopify usa centavos, MP usa pesos
-        currency_id: 'ARS',              // Cambiá a 'PEN' si estás en Perú, etc.
+        currency_id: 'PEN',              // Cambiá a 'PEN' si estás en Perú, etc.
         picture_url: item.image || ''
       };
     });
@@ -71,10 +71,10 @@ module.exports = async function handler(req, res) {
       // Cuotas sin interés — el comprador puede elegir hasta 12 cuotas
       // Podés limitar con installments.default_installments
       // o con payment_methods.installments (número máximo)
-      payment_methods: {
-        installments: 12,              // Máximo de cuotas permitidas
-        default_installments: 3        // Cuotas preseleccionadas al abrir el checkout
+     payment_methods: {
+        installments: 12
       },
+      installments: 3
 
       // URLs de retorno después del pago
       back_urls: {
@@ -105,7 +105,6 @@ module.exports = async function handler(req, res) {
     // sandbox_init_point = link de pruebas
     return res.status(200).json({
       id:                  resultado.id,
-      init_point:          resultado.init_point,
       sandbox_init_point:  resultado.sandbox_init_point
     });
 
