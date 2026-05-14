@@ -21,7 +21,9 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN
 });
-
+// Define el dominio aquí
+  const shopifyDomain = 'layers.pe';
+  
 module.exports = async function handler(req, res) {
   // 1. Configurar cabeceras CORS para todas las respuestas
   res.setHeader('Access-Control-Allow-Origin', '*'); // En producción, mejor usa tu dominio de Shopify
