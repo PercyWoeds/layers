@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       id: resultado.id,
-      init_point: resultado.init_point, // Link real
+      //init_point: resultado.init_point, // Link real
       sandbox_init_point: resultado.sandbox_init_point // Link de prueba
     });
 
