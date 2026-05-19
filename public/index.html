@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pago seguro — Alfombras</title>
+
+  <!-- MercadoPago SDK -->
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F7F5F0;
+      --surface:   #FFFFFF;
+      --ink:       #1A1714;
+      --ink-soft:  #6B6560;
+      --accent:    #2D5A3D;
+      --accent-lt: #E8F0EA;
+      --danger:    #C0392B;
+      --border:    #E2DDD8;
+      --radius:    12px;
+      --shadow:    0 2px 16px rgba(0,0,0,0.07);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 64px;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      max-width: 680px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      color: var(--ink);
+    }
+    .badge-secure {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--accent-lt);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      width: 100%;
+      max-width: 680px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media(min-width: 720px) {
+      .layout { grid-template-columns: 1fr 340px; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+    .card-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px;
+      margin-bottom: 18px;
+      color: var(--ink);
+    }
+
+    /* ── Resumen del carrito ── */
+    #resumen-items { display: flex; flex-direction: column; gap: 12px; }
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .item-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .item-img {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    .item-info { flex: 1; }
+    .item-name { font-size: 14px; font-weight: 500; }
+    .item-qty  { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+    .item-price { font-size: 14px; font-weight: 500; white-space: nowrap; }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 2px solid var(--ink);
+    }
+    .total-label { font-size: 13px; color: var(--ink-soft); }
+    .total-amount { font-family: 'DM Serif Display', serif; font-size: 22px; }
+
+    /* ── Selector de cuotas ── */
+    .cuotas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .cuota-btn {
+      border: 2px solid var(--border);
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 14px 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color .2s, background .2s;
+    }
+    .cuota-btn:hover { border-color: var(--accent); }
+    .cuota-btn.selected {
+      border-color: var(--accent);
+      background: var(--accent-lt);
+    }
+    .cuota-n {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: var(--accent);
+      display: block;
+    }
+    .cuota-label {
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin-top: 2px;
+      display: block;
+    }
+    .cuota-monto {
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 4px;
+      display: block;
+    }
+    .sin-interes-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-lt);
+      border-radius: 99px;
+      padding: 2px 7px;
+      margin-top: 4px;
+    }
+
+    /* ── Formulario MP ── */
+    #form-checkout { display: flex; flex-direction: column; gap: 14px; }
+
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      margin-bottom: 5px;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Contenedores para los campos de MP (los inyecta el SDK) */
+    #form-checkout__cardNumber,
+    #form-checkout__expirationDate,
+    #form-checkout__securityCode {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      height: 46px;
+      background: var(--bg);
+      transition: border-color .2s;
+    }
+    #form-checkout__cardNumber:focus-within,
+    #form-checkout__expirationDate:focus-within,
+    #form-checkout__securityCode:focus-within {
+      border-color: var(--accent);
+    }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    input[type="text"], input[type="email"], select {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s;
+      appearance: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+
+    /* Botón pagar */
+    #btn-pagar {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: opacity .2s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    #btn-pagar:hover:not(:disabled) { opacity: 0.88; }
+    #btn-pagar:active:not(:disabled) { transform: scale(0.98); }
+    #btn-pagar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Mensajes de error / éxito */
+    .msg { border-radius: 8px; padding: 12px 14px; font-size: 13px; margin-top: 10px; display: none; }
+    .msg.error   { background: #FDECEA; color: var(--danger); display: block; }
+    .msg.success { background: var(--accent-lt); color: var(--accent); display: block; }
+
+    /* Loader spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Footer */
+    .secure-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    /* Estado de carga inicial */
+    #loading-state {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--ink-soft);
+      font-size: 14px;
+    }
+    #main-content { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">Tu Tienda</span>
+  <span class="badge-secure">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Pago seguro
+  </span>
+</header>
+
+<div id="loading-state">Cargando tu pedido…</div>
+
+<div class="layout" id="main-content">
+
+  <!-- Columna izquierda: formulario -->
+  <div>
+    <!-- Selector de cuotas -->
+    <div class="card" style="margin-bottom:20px">
+      <p class="card-title">Elegí tus cuotas</p>
+      <div class="cuotas-grid" id="cuotas-grid">
+        <!-- Se generan dinámicamente según el total -->
+      </div>
+      <p style="font-size:11px;color:var(--ink-soft);text-align:center">
+        ✓ Todas las cuotas son sin interés — el precio no cambia
+      </p>
+    </div>
+
+    <!-- Formulario de tarjeta -->
+    <div class="card">
+      <p class="card-title">Datos de tu tarjeta</p>
+      <form id="form-checkout" onsubmit="return false">
+
+        <div>
+          <label class="field-label">Número de tarjeta</label>
+          <div id="form-checkout__cardNumber"></div>
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="field-label">Vencimiento</label>
+            <div id="form-checkout__expirationDate"></div>
+          </div>
+          <div>
+            <label class="field-label">CVV</label>
+            <div id="form-checkout__securityCode"></div>
+          </div>
+        </div>
+
+        <div>
+          <label class="field-label">Nombre en la tarjeta</label>
+          <input type="text" id="form-checkout__cardholderName" placeholder="Como figura en la tarjeta" autocomplete="cc-name" />
+        </div>
+
+        <div>
+          <label class="field-label">Email</label>
+          <input type="email" id="form-checkout__cardholderEmail" placeholder="para recibir el comprobante" autocomplete="email" />
+        </div>
+
+        <div class="field-row">
+          <div>
+            <label class="field-label">Tipo de documento</label>
+            <select id="form-checkout__identificationType">
+              <option value="DNI">DNI</option>
+              <option value="CE">Carné de Extranjería</option>
+              <option value="RUC">RUC</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Número de documento</label>
+            <input type="text" id="form-checkout__identificationNumber" placeholder="12345678" />
+          </div>
+        </div>
+
+        <!-- Campo oculto: cuota seleccionada -->
+        <input type="hidden" id="cuotas-seleccionadas" value="3" />
+
+        <button type="submit" id="btn-pagar" disabled>
+          <span id="btn-text">Pagar</span>
+          <div class="spinner" id="spinner"></div>
+        </button>
+
+        <div class="msg" id="msg-error"></div>
+        <div class="msg success" id="msg-success" style="display:none"></div>
+
+      </form>
+
+      <p class="secure-note">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Procesado por Mercado Pago · SSL 256-bit
+      </p>
+    </div>
+  </div>
+
+  <!-- Columna derecha: resumen -->
+  <div>
+    <div class="card">
+      <p class="card-title">Tu pedido</p>
+      <div id="resumen-items"></div>
+      <div class="total-row">
+        <span class="total-label">Total</span>
+        <span class="total-amount" id="total-display">S/. 0</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN
+// ============================================================
+const MP_PUBLIC_KEY = 'APP_USR-25809e5a-da1e-4db7-a54d-71ba93c9fa29'; // Reemplazá con tu clave pública
+const API_BASE      = '';  // Si el frontend y backend están en el mismo Vercel, dejar vacío
+
+// ============================================================
+// INICIO
+// ============================================================
+let totalCarrito = 0;
+let cuotasElegidas = 3;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  const cartToken = params.get('cart');
+
+  if (!cartToken) {
+    mostrarError('No se recibió información del carrito. Por favor volvé a la tienda.');
+    return;
+  }
+
+  try {
+    // Obtiene el carrito desde el backend
+    const res = await fetch(`${API_BASE}/api/carrito?token=${cartToken}`);
+    if (!res.ok) throw new Error('No se pudo cargar el carrito');
+    const carrito = await res.json();
+
+    renderizarResumen(carrito);
+    inicializarMP();
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('main-content').style.display  = 'grid';
+
+  } catch (err) {
+    mostrarError('Error al cargar el pedido: ' + err.message);
+  }
+});
+
+// ============================================================
+// RENDERIZAR RESUMEN DEL CARRITO
+// ============================================================
+function renderizarResumen(carrito) {
+  const contenedor = document.getElementById('resumen-items');
+  totalCarrito = carrito.items.reduce((s, i) => s + (i.price / 100) * i.quantity, 0);
+
+  carrito.items.forEach(item => {
+    const precio = (item.price / 100).toFixed(2);
+    const div = document.createElement('div');
+    div.className = 'item-row';
+    div.innerHTML = `
+      <img class="item-img" src="${item.image || ''}" alt="${item.title}" onerror="this.style.background='#eee'"/>
+      <div class="item-info">
+        <div class="item-name">${item.title}</div>
+        <div class="item-qty">Cant: ${item.quantity}</div>
+      </div>
+      <div class="item-price">S/. ${(precio * item.quantity).toFixed(2)}</div>
+    `;
+    contenedor.appendChild(div);
+  });
+
+  document.getElementById('total-display').textContent = `S/. ${totalCarrito.toFixed(2)}`;
+  renderizarCuotas();
+}
+
+// ============================================================
+// RENDERIZAR SELECTOR DE CUOTAS (solo 3, 6 y 12)
+// ============================================================
+function renderizarCuotas() {
+  const grid = document.getElementById('cuotas-grid');
+  const opciones = [3, 6, 12];
+
+  grid.innerHTML = '';
+  opciones.forEach((n, i) => {
+    const montoCuota = (totalCarrito / n).toFixed(2);
+    const btn = document.createElement('button');
+    btn.className = 'cuota-btn' + (i === 0 ? ' selected' : '');
+    btn.type = 'button';
+    btn.dataset.cuotas = n;
+    btn.innerHTML = `
+      <span class="cuota-n">${n}</span>
+      <span class="cuota-label">cuotas de</span>
+      <span class="cuota-monto">S/. ${montoCuota}</span>
+      <span class="sin-interes-badge">sin interés</span>
+    `;
+    btn.addEventListener('click', () => seleccionarCuota(n));
+    grid.appendChild(btn);
+  });
+}
+
+function seleccionarCuota(n) {
+  cuotasElegidas = n;
+  document.getElementById('cuotas-seleccionadas').value = n;
+  document.querySelectorAll('.cuota-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.cuotas) === n);
+  });
+}
+
+// ============================================================
+// INICIALIZAR MERCADO PAGO CHECKOUT API
+// ============================================================
+function inicializarMP() {
+  const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
+
+  const cardForm = mp.cardForm({
+    amount: String(totalCarrito.toFixed(2)),
+    iframe: true,
+    form: {
+      id: 'form-checkout',
+      cardholderName:       { id: 'form-checkout__cardholderName',      placeholder: 'Como figura en la tarjeta' },
+      cardholderEmail:      { id: 'form-checkout__cardholderEmail',      placeholder: 'tu@email.com' },
+      cardNumber:           { id: 'form-checkout__cardNumber',           placeholder: '---- ---- ---- ----' },
+      expirationDate:       { id: 'form-checkout__expirationDate',       placeholder: 'MM/AA' },
+      securityCode:         { id: 'form-checkout__securityCode',         placeholder: 'CVV' },
+      installments:         { id: 'cuotas-seleccionadas' },
+      identificationType:   { id: 'form-checkout__identificationType' },
+      identificationNumber: { id: 'form-checkout__identificationNumber', placeholder: '12345678' },
+    },
+    callbacks: {
+      onFormMounted: (err) => {
+        if (err) { console.error('Error montando formulario MP:', err); return; }
+        document.getElementById('btn-pagar').disabled = false;
+      },
+      onSubmit: (event) => {
+        event.preventDefault();
+        procesarPago(cardForm);
+      },
+      onFetching: (resource) => {
+        // MP fetching datos de la tarjeta
+        document.getElementById('btn-pagar').disabled = true;
+      }
+    }
+  });
+}
+
+// ============================================================
+// PROCESAR PAGO
+// ============================================================
+async function procesarPago(cardForm) {
+  const btnTexto  = document.getElementById('btn-text');
+  const spinner   = document.getElementById('spinner');
+  const btnPagar  = document.getElementById('btn-pagar');
+  const msgError  = document.getElementById('msg-error');
+  const msgOk     = document.getElementById('msg-success');
+
+  // UI: cargando
+  btnPagar.disabled  = true;
+  btnTexto.textContent = 'Procesando…';
+  spinner.style.display = 'block';
+  msgError.className = 'msg';
+  msgError.textContent = '';
+
+  try {
+    const formData = cardForm.getCardFormData();
+    const params   = new URLSearchParams(window.location.search);
+
+    const payload = {
+      token:              formData.token,
+      issuerId:           formData.issuerId,
+      paymentMethodId:    formData.paymentMethodId,
+      transactionAmount:  totalCarrito,
+      installments:       cuotasElegidas,   // ← solo 3, 6 o 12
+      description:        'Compra de alfombras',
+      cartToken:          params.get('cart'),
+      payer: {
+        email:          formData.cardholderEmail,
+        identification: {
+          type:   formData.identificationType,
+          number: formData.identificationNumber
+        }
+      }
+    };
+
+    const res = await fetch(`${API_BASE}/api/procesar-pago`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.status === 'approved') {
+      msgOk.style.display = 'block';
+      msgOk.textContent = '¡Pago aprobado! Redirigiendo…';
+      setTimeout(() => {
+        window.location.href = data.redirectUrl || '/pages/pago-exitoso';
+      }, 2000);
+    } else if (data.status === 'in_process' || data.status === 'pending') {
+      msgOk.style.display = 'block';
+      msgOk.textContent = 'Pago en proceso. Te avisaremos por email cuando se confirme.';
+    } else {
+      throw new Error(data.message || 'El pago fue rechazado. Verificá los datos de tu tarjeta.');
+    }
+
+  } catch (err) {
+    msgError.className = 'msg error';
+    msgError.textContent = err.message;
+    btnPagar.disabled    = false;
+    btnTexto.textContent = 'Intentar de nuevo';
+    spinner.style.display = 'none';
+  }
+}
+
+function mostrarError(msg) {
+  document.getElementById('loading-state').innerHTML =
+    `<p style="color:var(--danger)">${msg}</p>
+     <a href="javascript:history.back()" style="color:var(--accent);font-size:13px;margin-top:8px;display:inline-block">← Volver</a>`;
+}
+</script>
+
+</body>
+</html>
