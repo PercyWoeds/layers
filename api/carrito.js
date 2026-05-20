@@ -13,8 +13,10 @@ module.exports = async (req, res) => {
   }
 
   const { token } = req.query;
-  const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN || 'layers.myshopify.com';
 
+
+// Cambia la línea de SHOPIFY_DOMAIN por esta en tu api/carrito.js:
+  const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN || 'prynts-pe.myshopify.com';
   if (!token) {
     return res.status(400).json({ error: 'Falta el token del carrito.' });
   }
