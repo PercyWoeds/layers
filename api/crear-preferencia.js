@@ -57,7 +57,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       id: resultado.id,
       init_point: resultado.init_point, // Habilita el link real para producción
-      sandbox_init_point: resultado.sandbox_init_point 
+      //sandbox_init_point: resultado.sandbox_init_point 
     });
 
   } catch (error) {
