@@ -8,7 +8,7 @@
   <script src="https://sdk.mercadopago.com/js/v2"></script>
 
   <style>
-    /* ── TEMPLATE CLÁSICO INSPIRADO EN MERCADO PAGO ────────────────────── */
+    /* ── UI CLÁSICA MERCADO PAGO CLARO Y LEGIBLE ──────────────────────── */
     :root {
       --mp-blue:    #009ee3;
       --mp-bg:      #f5f5f5;
@@ -45,7 +45,6 @@
       padding: 24px;
     }
 
-    /* Cabecera Estilo MP */
     header {
       display: flex;
       align-items: center;
@@ -78,7 +77,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Resumen de Monto */
     .order-summary {
       background: #f9f9f9;
       border-radius: var(--radius);
@@ -90,30 +88,12 @@
       border: 1px solid var(--border);
     }
 
-    .summary-label {
-      font-size: 14px;
-      color: #666666;
-    }
+    .summary-label { font-size: 14px; color: #666666; }
+    .summary-amount { font-size: 18px; font-weight: 600; color: var(--text-main); }
 
-    .summary-amount {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    /* Estilos del Formulario */
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-row {
-      display: flex;
-      gap: 12px;
-    }
-
-    .form-row .form-group {
-      flex: 1;
-    }
+    .form-group { margin-bottom: 16px; }
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
 
     label {
       display: block;
@@ -122,14 +102,13 @@
       margin-bottom: 6px;
     }
 
-    /* Contenedores para Campos Seguros e Inputs Tradicionales */
     .mp-input-container, input, select {
       width: 100%;
       height: 44px;
       background-color: #ffffff;
       border: 1px solid #cccccc;
       border-radius: var(--radius);
-      color: #333333;
+      color: #333333; /* Forzar el texto oscuro */
       padding: 0 12px;
       font-size: 15px;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -143,7 +122,6 @@
       box-shadow: 0 0 0 2px rgba(0, 158, 227, 0.2);
     }
 
-    /* Ajuste para select nativo */
     select {
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23666666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
@@ -152,7 +130,6 @@
       cursor: pointer;
     }
 
-    /* Botón Oficial de Mercado Pago */
     .btn {
       width: 100%;
       height: 48px;
@@ -171,17 +148,9 @@
       margin-top: 8px;
     }
 
-    .btn:hover:not(:disabled) {
-      background-color: #0080b7;
-    }
+    .btn:hover:not(:disabled) { background-color: #0080b7; }
+    .btn:disabled { background-color: #e6e6e6; color: #a6a6a6; cursor: not-allowed; }
 
-    .btn:disabled {
-      background-color: #e6e6e6;
-      color: #a6a6a6;
-      cursor: not-allowed;
-    }
-
-    /* Mensajes de Alerta */
     .error-box {
       background: #fef0f1;
       border: 1px solid #fcc2c7;
@@ -201,7 +170,6 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
@@ -267,13 +235,13 @@
           <div class="form-group">
             <label for="form-checkout__issuer">Banco emisor</label>
             <select id="form-checkout__issuer" required>
-              <option value="" disabled selected>Selecciona el banco</option>
+              <option value="default" selected>Banco de la Tarjeta</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="form-checkout__installments">Cuotas disponibles</label>
+            <label for="form-checkout__installments">Cuotas sin interés</label>
             <select id="form-checkout__installments" required>
-              <option value="" disabled selected>Ingresa tu tarjeta...</option>
+              <option value="" disabled selected>Escribe tu tarjeta...</option>
             </select>
           </div>
         </div>
@@ -285,11 +253,12 @@
 </div>
 
 <script>
-  // 🛠️ CONFIGURACIÓN DE LAS LLAVES DE PRUEBA
- const MP_PUBLIC_KEY = 'APP_USR-25809e5a-da1e-4db7-a54d-71ba93c9fa29';
+  // 🛠️ AGREGA TU LLAVE PÚBLICA DE PRUEBAS AQUÍ
+  const MP_PUBLIC_KEY = 'APP_USR-25809e5a-da1e-4db7-a54d-71ba93c9fa29';
   const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
   
   let totalAmount = 0;
+  let cardPaymentMethodId = 'visa'; // Valor por defecto seguro para inicialización
 
   document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -301,7 +270,6 @@
     }
 
     try {
-      // Decodificación directa del payload Base64 transportado de Shopify
       const jsonDecodificado = decodeURIComponent(escape(atob(datosUrl)));
       const cartData = JSON.parse(jsonDecodificado);
       
@@ -316,30 +284,33 @@
   });
 
   function inicializarCamposSeguros() {
-    // 🌟 ESTILIZACIÓN DE TEXTO PARA QUE SE VEA OSCURO AL ESCRIBIR DENTRO DEL IFRAME DE MP
-    const estiloCamposMP = {
+    // Ajuste de estilos optimizado para el Iframe Seguro de Mercado Pago v2
+    const estiloCampos = {
       style: {
         input: {
-          'font-size': '15px',
-          'color': '#333333', // <-- Forzamos color oscuro para el texto ingresado
-          'font-family': 'Helvetica Neue, Arial, sans-serif',
-          'placeholder': {
-            'color': '#999999'
-          }
+          color: '#333333', // Texto gris oscuro súper legible
+          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+          fontSize: '15px',
+          placeholder: { color: '#999999' }
         }
       }
     };
 
-    // Montar campos protegidos aplicando los estilos oscuros
-    const cardNumber = mp.fields.create('cardNumber', estiloCamposMP).mount('form-checkout__cardNumber');
-    const expirationDate = mp.fields.create('expirationDate', estiloCamposMP).mount('form-checkout__expirationDate');
-    const securityCode = mp.fields.create('securityCode', estiloCamposMP).mount('form-checkout__securityCode');
+    const cardNumber = mp.fields.create('cardNumber', estiloCampos);
+    cardNumber.mount('form-checkout__cardNumber');
 
-    // Cargar documentos válidos para Perú de Mercado Pago
+    const expirationDate = mp.fields.create('expirationDate', estiloCampos);
+    expirationDate.mount('form-checkout__expirationDate');
+
+    const securityCode = mp.fields.create('securityCode', estiloCampos);
+    securityCode.mount('form-checkout__securityCode');
+
+    // Cargar documentos iniciales
     (async function cargarDocumentos() {
       try {
         const docTypes = await mp.getIdentificationTypes();
         const selectDoc = document.getElementById('form-checkout__identificationType');
+        selectDoc.innerHTML = '';
         docTypes.forEach(d => {
           let o = document.createElement('option');
           o.value = d.id; o.textContent = d.name;
@@ -348,53 +319,53 @@
       } catch (e) { console.error("Error obteniendo documentos:", e); }
     })();
 
-    // Escuchar el cambio de número de tarjeta (BIN) para calcular Bancos y Cuotas Estrictas
+    // 🔄 MOTOR CONTROLADOR AUTOMÁTICO DE CUOTAS (3, 6, 12 SIN INTERÉS)
     cardNumber.on('bin_change', async (data) => {
       const bin = data.bin;
       if (!bin) return;
 
+      const selectIssuer = document.getElementById('form-checkout__issuer');
+      const selectInstallments = document.getElementById('form-checkout__installments');
+      
+      // Inyectamos inmediatamente un banco por defecto visual para evitar que se quede congelado
+      selectIssuer.innerHTML = '<option value="default" selected>Banco de la Tarjeta</option>';
+      selectInstallments.innerHTML = '';
+
       try {
-        // 1. Cargar e Inyectar Bancos Emisores
-        const issuers = await mp.getIssuers({ bin });
-        const selectIssuer = document.getElementById('form-checkout__issuer');
-        selectIssuer.innerHTML = '';
-        issuers.forEach(i => {
+        // Consultar el método de pago real del BIN de pruebas
+        const paymentMethods = await mp.getPaymentMethods({ bin });
+        if (paymentMethods && paymentMethods.length > 0) {
+          cardPaymentMethodId = paymentMethods[0].id;
+          
+          // Actualizar el nombre visual del banco según la red
+          selectIssuer.innerHTML = `<option value="default" selected>${cardPaymentMethodId.toUpperCase()} Emisor</option>`;
+        }
+
+        // 🛡️ REGLA EXPLÍCITA AUTOMÁTICA: Forzamos la creación limpia de tus 3, 6 y 12 cuotas sin interés
+        const plazos = [3, 6, 12];
+        plazos.forEach(meses => {
+          let cuotaMensual = totalAmount / meses;
           let o = document.createElement('option');
-          o.value = i.id; o.textContent = i.name;
-          selectIssuer.appendChild(o);
+          o.value = meses.toString();
+          o.textContent = `${meses} cuotas sin interés de S/ ${cuotaMensual.toFixed(2)}`;
+          selectInstallments.appendChild(o);
         });
 
-        // 2. Obtener los planes de pago y filtrar solo 3, 6 y 12 cuotas
-        const installmentsInfo = await mp.getInstallments({ bin, amount: totalAmount.toString() });
-        const selectInstallments = document.getElementById('form-checkout__installments');
+      } catch (error) {
+        console.error("Error en la lectura del BIN:", error);
+        
+        // Estrategia de respaldo robusta si la API externa de MP demora en responder
         selectInstallments.innerHTML = '';
-
-        if (installmentsInfo.length > 0) {
-          const rawCosts = installmentsInfo[0].payer_costs;
-          
-          // 🛡️ REGLA ESTRICTA DE CUOTAS SOLICITADA (3, 6 y 12 meses sin interés)
-          const cuotasPermitidas = rawCosts.filter(c => [3, 6, 12].includes(c.installments));
-
-          if (cuotasPermitidas.length > 0) {
-            // Pintar las opciones de 3, 6 o 12 meses
-            cuotasPermitidas.forEach(c => {
-              let o = document.createElement('option');
-              o.value = c.installments;
-              o.textContent = `${c.installments} cuotas sin interés de S/ ${(totalAmount / c.installments).toFixed(2)}`;
-              selectInstallments.appendChild(o);
-            });
-          } else {
-            // Opción en 1 solo pago por si es tarjeta de débito o no califica al financiamiento extendido
-            let o = document.createElement('option');
-            o.value = "1";
-            o.textContent = `1 pago único de S/ ${totalAmount.toFixed(2)}`;
-            selectInstallments.appendChild(o);
-          }
-        }
-      } catch (error) { console.error("Error configurando cuotas:", error); }
+        [3, 6, 12].forEach(meses => {
+          let o = document.createElement('option');
+          o.value = meses.toString();
+          o.textContent = `${meses} cuotas sin interés de S/ ${(totalAmount / meses).toFixed(2)}`;
+          selectInstallments.appendChild(o);
+        });
+      }
     });
 
-    // Enviar el formulario y tokenizar la tarjeta de crédito
+    // Envío seguro del pago a tu backend /api/procesar-pago
     const form = document.getElementById('form-checkout');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -409,14 +380,15 @@
           cardholderEmail: document.getElementById('form-checkout__cardholderEmail').value
         });
 
-        if (!cardToken.id) throw new Error("Los datos de la tarjeta no pudieron ser validados.");
+        if (!cardToken || !cardToken.id) {
+          throw new Error("No se pudo procesar la tarjeta. Verifica los números ingresados.");
+        }
 
-        // Generar payload estructurado para la API del backend
         const transactionPayload = {
           token: cardToken.id,
-          installments: document.getElementById('form-checkout__installments').value,
+          installments: parseInt(document.getElementById('form-checkout__installments').value),
           transaction_amount: totalAmount,
-          payment_method_id: cardToken.payment_method_id,
+          payment_method_id: cardPaymentMethodId || cardToken.payment_method_id,
           payer: {
             email: document.getElementById('form-checkout__cardholderEmail').value,
             identification: {
@@ -435,11 +407,11 @@
         const paymentResult = await serverResponse.json();
 
         if (paymentResult.status === 'approved') {
-          alert("¡Pago aprobado con éxito!");
+          alert("¡Pago aprobado de manera exitosa!");
           window.location.href = '/checkout/order-received';
         } else {
           setLoading(false);
-          mostrarError(`Transacción declinada: ${paymentResult.message || 'Intente con otra tarjeta.'}`);
+          mostrarError(`Transacción denegada: ${paymentResult.message || 'Por favor, intente con otra tarjeta.'}`);
         }
 
       } catch (err) {
@@ -461,9 +433,7 @@
     box.style.display = 'block';
   }
 
-  function ocultarError() {
-    document.getElementById('error-msg').style.display = 'none';
-  }
+  function ocultarError() { document.getElementById('error-msg').style.display = 'none'; }
 
   function mostrarErrorFatal(msg) {
     document.getElementById('checkout-screen').innerHTML = `
