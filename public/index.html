@@ -303,35 +303,35 @@
   
   let totalAmount = 0;
 
+    
   document.addEventListener('DOMContentLoaded', async () => {
-    // Leer parámetro 'token' o 'cart' de la URL de manera flexible
-    const urlParams = new URLSearchParams(window.location.search);
-    const cartToken = urlParams.get('token') || urlParams.get('cart');
+      const urlParams = new URLSearchParams(window.location.search);
+      const datosUrl = urlParams.get('data');
 
-    if (!cartToken) {
-      mostrarErrorFatal("No se recibieron datos de compra válidos desde el carrito de Shopify.");
-      return;
-    }
+      if (!datosUrl) {
+        mostrarErrorFatal("No se recibieron datos de compra válidos desde el carrito de Shopify.");
+        return;
+      }
 
-    try {
-      // Conectar al endpoint del backend para jalar el JSON de Shopify
-      const response = await fetch(`/api/carrito?token=${cartToken}`);
-      if (!response.ok) throw new Error("El token de compra expiró o es inválido.");
-      
-      const cartData = await response.json();
-      totalAmount = cartData.total_price;
+      try {
+        // Decodificar los datos del carrito recibidos directamente de la URL
+        const jsonDecodificado = decodeURIComponent(escape(atob(datosUrl)));
+        const cartData = JSON.parse(jsonDecodificado);
+        
+        totalAmount = cartData.total_price;
 
-      // Actualizar vista e inicializar Mercado Pago
-      document.getElementById('total-price-display').innerText = `S/ ${totalAmount.toFixed(2)}`;
-      document.getElementById('loading-cart').style.display = 'none';
-      document.getElementById('checkout-content').style.display = 'block';
+        // Actualizar vista del precio e inicializar Mercado Pago inmediatamente
+        document.getElementById('total-price-display').innerText = `S/ ${totalAmount.toFixed(2)}`;
+        document.getElementById('loading-cart').style.display = 'none';
+        document.getElementById('checkout-content').style.display = 'block';
 
-      inicializarCamposSeguros();
+        // Arrancar pasarela de pago
+        inicializarCamposSeguros();
 
-    } catch (err) {
-      mostrarErrorFatal(err.message);
-    }
-  });
+      } catch (err) {
+        mostrarErrorFatal("Error al procesar la información del pedido de la URL.");
+      }
+    });
 
   function inicializarCamposSeguros() {
     // Montar elementos protegidos del SDK v2 en los divs contenedores
