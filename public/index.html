@@ -173,6 +173,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
+
 <body>
 
 <div class="checkout-wrapper" id="checkout-screen">
@@ -250,15 +251,14 @@
       </form>
     </div>
   </div>
-</div>
-
-<script>
-  // 🛠️ INSERTA TU LLAVE PÚBLICA DE PRUEBAS AQUÍ
+</div><script>
+  // 🛠️ LLAVE PÚBLICA DE PRODUCCIÓN O PRUEBAS
   const MP_PUBLIC_KEY = 'APP_USR-25809e5a-da1e-4db7-a54d-71ba93c9fa29';
   const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
   
   let totalAmount = 0;
   let cardPaymentMethodId = 'visa';
+  let shopifyCartToken = ''; // 🔑 CORRECCIÓN: Almacena el token del carrito globalmente
 
   document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -274,6 +274,8 @@
       const cartData = JSON.parse(jsonDecodificado);
       
       totalAmount = cartData.total_price;
+      shopifyCartToken = cartData.token || ''; // 🔑 Extrae la huella del carrito de Shopify
+      
       document.getElementById('total-price-display').innerText = `S/ ${totalAmount.toFixed(2)}`;
 
       inicializarCamposSeguros();
@@ -284,7 +286,6 @@
   });
 
   function inicializarCamposSeguros() {
-    // CORRECCIÓN 1: Estilos planos sin la propiedad anidada 'input' que arrojaba error en la consola
     const estiloCampos = {
       color: '#333333',
       fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
@@ -303,7 +304,7 @@
     const securityCode = mp.fields.create('securityCode', estiloCampos);
     securityCode.mount('form-checkout__securityCode');
 
-    // Cargar documentos iniciales
+    // Cargar documentos
     (async function cargarDocumentos() {
       try {
         const docTypes = await mp.getIdentificationTypes();
@@ -317,8 +318,7 @@
       } catch (e) { console.error("Error obteniendo documentos:", e); }
     })();
 
-    // CORRECCIÓN 2: Uso del evento oficial 'binChange' en lugar de 'bin_change'
-  // 🔄 MOTOR CONTROLADOR AUTOMÁTICO DE BANCO Y CUOTAS (CORREGIDO)
+    // Controlador dinámico de cuotas y marcas
     cardNumber.on('binChange', async (data) => {
       const bin = data.bin;
       const selectIssuer = document.getElementById('form-checkout__issuer');
@@ -330,23 +330,20 @@
         return;
       }
 
-      // 1. Detectar e Inyectar la marca de la tarjeta de forma visual inmediata
       try {
         const paymentMethods = await mp.getPaymentMethods({ bin });
         if (paymentMethods && paymentMethods.length > 0) {
-          cardPaymentMethodId = paymentMethods[0].id; // Ejm: "visa", "mastercard"
+          cardPaymentMethodId = paymentMethods[0].id;
           const nombreFormateado = cardPaymentMethodId.charAt(0).toUpperCase() + cardPaymentMethodId.slice(1);
-          
           selectIssuer.innerHTML = `<option value="default" selected>${nombreFormateado} de Prueba</option>`;
         } else {
           selectIssuer.innerHTML = '<option value="default" selected>Tarjeta de Crédito</option>';
         }
       } catch (err) {
-        console.warn("No se pudo mapear el emisor por API, aplicando genérico:", err);
         selectIssuer.innerHTML = '<option value="default" selected>Tarjeta de Crédito</option>';
       }
 
-      // 2. Forzar visualización inmediata de tus 3, 6 y 12 cuotas sin interés
+      // Forzar cuotas sin interés en base a tu regla gerencial de Layers
       selectInstallments.innerHTML = '';
       const plazos = [3, 6, 12];
       plazos.forEach(meses => {
@@ -357,7 +354,8 @@
         selectInstallments.appendChild(o);
       });
     });
-    // Envío del formulario final
+
+    // Envío del formulario integrado con tu Backend v2
     const form = document.getElementById('form-checkout');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -376,11 +374,14 @@
           throw new Error("No se pudo procesar la tarjeta. Verifica los números ingresados.");
         }
 
+        // 🔄 CORRECCIÓN: Nombres de propiedades idénticas a lo que espera tu Backend en Node
         const transactionPayload = {
           token: cardToken.id,
           installments: parseInt(document.getElementById('form-checkout__installments').value),
-          transaction_amount: totalAmount,
-          payment_method_id: cardPaymentMethodId || cardToken.payment_method_id,
+          transactionAmount: totalAmount,
+          paymentMethodId: cardPaymentMethodId,
+          cartToken: shopifyCartToken, // 🔑 Envía el token original para el Webhook
+          description: 'Compra de Alfombras - Layers Perú',
           payer: {
             email: document.getElementById('form-checkout__cardholderEmail').value,
             identification: {
@@ -399,8 +400,8 @@
         const paymentResult = await serverResponse.json();
 
         if (paymentResult.status === 'approved') {
-          alert("¡Pago aprobado de manera exitosa!");
-          window.location.href = '/checkout/order-received';
+          // 🔑 CORRECCIÓN: Redirige dinámicamente usando el link de retorno a Shopify provisto por tu backend
+          window.location.href = paymentResult.redirectUrl; 
         } else {
           setLoading(false);
           mostrarError(`Transacción denegada: ${paymentResult.message || 'Por favor, intente con otra tarjeta.'}`);
@@ -431,9 +432,10 @@
     document.getElementById('checkout-screen').innerHTML = `
       <div class="card" style="text-align:center; padding:40px 20px;">
         <div style="font-size:40px; margin-bottom:12px;">⚠️</div>
-        <div style="color:var(--error); font-size:14px;">${msg}</div>
+        <div style="color:red; font-size:14px;">${msg}</div>
       </div>`;
   }
 </script>
+
 </body>
 </html>
