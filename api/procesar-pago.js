@@ -6,9 +6,11 @@ const client = new MercadoPagoConfig({
 
 const CUOTAS_PERMITIDAS = [3, 6, 12];
 const SHOPIFY_DOMAIN = process.env.SHOPIFY_DOMAIN || 'layers.pe';
+// Construimos dinámicamente la URL de tu webhook basada en el entorno de Vercel
+const VERCEL_URL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://layers-alpha-eight.vercel.app';
 
 module.exports = async function handler(req, res) {
-  // CORS Optimizado: Si hay problemas con las variables de entorno, 'layers.pe' queda como fallback directo
+  // CORS Optimizado
   res.setHeader('Access-Control-Allow-Origin', '*'); 
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -41,18 +43,24 @@ module.exports = async function handler(req, res) {
 
     const payment = new Payment(client);
     const resultado = await payment.create({
-      token: token,
-      issuer_id: issuerId,
-      payment_method_id: paymentMethodId,
-      transaction_amount: parseFloat(transactionAmount),
-      installments: cuotas,
-      description: description || 'Compra de alfombras',
-      external_reference: `shopify-${cartToken}`,
-      payer: {
-        email: payer.email,
-        identification: {
-          type: payer.identification?.type || 'DNI',
-          number: payer.identification?.number || ''
+      body: {
+        token: token,
+        issuer_id: issuerId,
+        payment_method_id: paymentMethodId,
+        transaction_amount: parseFloat(transactionAmount),
+        installments: cuotas,
+        description: description || 'Compra de alfombras',
+        external_reference: `shopify-${cartToken}`,
+        
+        // 🔑 HILO CONDUCTOR 2: Vincula la API de pagos con tu script automatizado de órdenes
+        notification_url: `${VERCEL_URL}/api/webhook`,
+        
+        payer: {
+          email: payer.email,
+          identification: {
+            type: payer.identification?.type || 'DNI',
+            number: payer.identification?.number || ''
+          }
         }
       }
     });

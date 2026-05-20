@@ -49,6 +49,9 @@ module.exports = async function handler(req, res) {
       },
       auto_return: 'approved',
       external_reference: `shopify-${carrito.token}`,
+      // 🔑 HILO CONDUCTOR 2: La URL de tu nuevo archivo webhook en Vercel
+      notification_url: `https://layers-alpha-eight.vercel.app/api/webhook`
+
     };
 
     const preference = new Preference(client);
