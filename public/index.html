@@ -318,46 +318,45 @@
     })();
 
     // CORRECCIÓN 2: Uso del evento oficial 'binChange' en lugar de 'bin_change'
+  // 🔄 MOTOR CONTROLADOR AUTOMÁTICO DE BANCO Y CUOTAS (CORREGIDO)
     cardNumber.on('binChange', async (data) => {
       const bin = data.bin;
-      if (!bin) return;
-
       const selectIssuer = document.getElementById('form-checkout__issuer');
       const selectInstallments = document.getElementById('form-checkout__installments');
       
-      selectIssuer.innerHTML = '<option value="default" selected>Banco de la Tarjeta</option>';
-      selectInstallments.innerHTML = '';
+      if (!bin) {
+        selectIssuer.innerHTML = '<option value="default" selected>Introduce tu tarjeta...</option>';
+        selectInstallments.innerHTML = '<option value="" disabled selected>Introduce tu tarjeta...</option>';
+        return;
+      }
 
+      // 1. Detectar e Inyectar la marca de la tarjeta de forma visual inmediata
       try {
         const paymentMethods = await mp.getPaymentMethods({ bin });
         if (paymentMethods && paymentMethods.length > 0) {
-          cardPaymentMethodId = paymentMethods[0].id;
-          selectIssuer.innerHTML = `<option value="default" selected>${cardPaymentMethodId.toUpperCase()} Emisor</option>`;
+          cardPaymentMethodId = paymentMethods[0].id; // Ejm: "visa", "mastercard"
+          const nombreFormateado = cardPaymentMethodId.charAt(0).toUpperCase() + cardPaymentMethodId.slice(1);
+          
+          selectIssuer.innerHTML = `<option value="default" selected>${nombreFormateado} de Prueba</option>`;
+        } else {
+          selectIssuer.innerHTML = '<option value="default" selected>Tarjeta de Crédito</option>';
         }
-
-        // Inyección instantánea de tus 3, 6 y 12 cuotas sin interés calculadas en tiempo real
-        const plazos = [3, 6, 12];
-        plazos.forEach(meses => {
-          let cuotaMensual = totalAmount / meses;
-          let o = document.createElement('option');
-          o.value = meses.toString();
-          o.textContent = `${meses} cuotas sin interés de S/ ${cuotaMensual.toFixed(2)}`;
-          selectInstallments.appendChild(o);
-        });
-
-      } catch (error) {
-        console.error("Error en el bloque binChange:", error);
-        
-        selectInstallments.innerHTML = '';
-        [3, 6, 12].forEach(meses => {
-          let o = document.createElement('option');
-          o.value = meses.toString();
-          o.textContent = `${meses} cuotas sin interés de S/ ${(totalAmount / meses).toFixed(2)}`;
-          selectInstallments.appendChild(o);
-        });
+      } catch (err) {
+        console.warn("No se pudo mapear el emisor por API, aplicando genérico:", err);
+        selectIssuer.innerHTML = '<option value="default" selected>Tarjeta de Crédito</option>';
       }
-    });
 
+      // 2. Forzar visualización inmediata de tus 3, 6 y 12 cuotas sin interés
+      selectInstallments.innerHTML = '';
+      const plazos = [3, 6, 12];
+      plazos.forEach(meses => {
+        let cuotaMensual = totalAmount / meses;
+        let o = document.createElement('option');
+        o.value = meses.toString();
+        o.textContent = `${meses} cuotas sin interés de S/ ${cuotaMensual.toFixed(2)}`;
+        selectInstallments.appendChild(o);
+      });
+    });
     // Envío del formulario final
     const form = document.getElementById('form-checkout');
     form.addEventListener('submit', async (e) => {
