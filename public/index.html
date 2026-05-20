@@ -108,7 +108,7 @@
       background-color: #ffffff;
       border: 1px solid #cccccc;
       border-radius: var(--radius);
-      color: #333333; /* Forzar el texto oscuro */
+      color: #333333;
       padding: 0 12px;
       font-size: 15px;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -253,12 +253,12 @@
 </div>
 
 <script>
-  // 🛠️ AGREGA TU LLAVE PÚBLICA DE PRUEBAS AQUÍ
+  // 🛠️ INSERTA TU LLAVE PÚBLICA DE PRUEBAS AQUÍ
   const MP_PUBLIC_KEY = 'APP_USR-25809e5a-da1e-4db7-a54d-71ba93c9fa29';
   const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
   
   let totalAmount = 0;
-  let cardPaymentMethodId = 'visa'; // Valor por defecto seguro para inicialización
+  let cardPaymentMethodId = 'visa';
 
   document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -284,15 +284,13 @@
   });
 
   function inicializarCamposSeguros() {
-    // Ajuste de estilos optimizado para el Iframe Seguro de Mercado Pago v2
+    // CORRECCIÓN 1: Estilos planos sin la propiedad anidada 'input' que arrojaba error en la consola
     const estiloCampos = {
-      style: {
-        input: {
-          color: '#333333', // Texto gris oscuro súper legible
-          fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-          fontSize: '15px',
-          placeholder: { color: '#999999' }
-        }
+      color: '#333333',
+      fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+      fontSize: '15px',
+      placeholder: {
+        color: '#999999'
       }
     };
 
@@ -319,29 +317,25 @@
       } catch (e) { console.error("Error obteniendo documentos:", e); }
     })();
 
-    // 🔄 MOTOR CONTROLADOR AUTOMÁTICO DE CUOTAS (3, 6, 12 SIN INTERÉS)
-    cardNumber.on('bin_change', async (data) => {
+    // CORRECCIÓN 2: Uso del evento oficial 'binChange' en lugar de 'bin_change'
+    cardNumber.on('binChange', async (data) => {
       const bin = data.bin;
       if (!bin) return;
 
       const selectIssuer = document.getElementById('form-checkout__issuer');
       const selectInstallments = document.getElementById('form-checkout__installments');
       
-      // Inyectamos inmediatamente un banco por defecto visual para evitar que se quede congelado
       selectIssuer.innerHTML = '<option value="default" selected>Banco de la Tarjeta</option>';
       selectInstallments.innerHTML = '';
 
       try {
-        // Consultar el método de pago real del BIN de pruebas
         const paymentMethods = await mp.getPaymentMethods({ bin });
         if (paymentMethods && paymentMethods.length > 0) {
           cardPaymentMethodId = paymentMethods[0].id;
-          
-          // Actualizar el nombre visual del banco según la red
           selectIssuer.innerHTML = `<option value="default" selected>${cardPaymentMethodId.toUpperCase()} Emisor</option>`;
         }
 
-        // 🛡️ REGLA EXPLÍCITA AUTOMÁTICA: Forzamos la creación limpia de tus 3, 6 y 12 cuotas sin interés
+        // Inyección instantánea de tus 3, 6 y 12 cuotas sin interés calculadas en tiempo real
         const plazos = [3, 6, 12];
         plazos.forEach(meses => {
           let cuotaMensual = totalAmount / meses;
@@ -352,9 +346,8 @@
         });
 
       } catch (error) {
-        console.error("Error en la lectura del BIN:", error);
+        console.error("Error en el bloque binChange:", error);
         
-        // Estrategia de respaldo robusta si la API externa de MP demora en responder
         selectInstallments.innerHTML = '';
         [3, 6, 12].forEach(meses => {
           let o = document.createElement('option');
@@ -365,7 +358,7 @@
       }
     });
 
-    // Envío seguro del pago a tu backend /api/procesar-pago
+    // Envío del formulario final
     const form = document.getElementById('form-checkout');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
