@@ -3,210 +3,201 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pago seguro — Layers</title>
+  <title>Pago seguro con Mercado Pago</title>
 
   <script src="https://sdk.mercadopago.com/js/v2"></script>
 
   <style>
-    /* ── Variables ─────────────────────────────────────────────────────── */
+    /* ── TEMPLATE CLÁSICO INSPIRADO EN MERCADO PAGO ────────────────────── */
     :root {
-      --bg:       #0f0e0c;
-      --surface:  #1a1916;
-      --border:   #2e2c28;
-      --accent:   #c8a96e;
-      --accent2:  #e8c88a;
-      --text:     #f0ece4;
-      --muted:    #7a7468;
-      --success:  #4caf7d;
-      --error:    #e05c5c;
-      --warn:     #e8b84b;
-      --radius:   12px;
-      --shadow:   0 4px 32px rgba(0,0,0,.5);
+      --mp-blue:    #009ee3;
+      --mp-bg:      #f5f5f5;
+      --card-bg:    #ffffff;
+      --text-main:  #333333;
+      --text-muted: #999999;
+      --border:     #e6e6e6;
+      --error:      #f23d4f;
+      --radius:     6px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Georgia', serif;
+      background-color: var(--mp-bg);
+      color: var(--text-main);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 16px;
     }
 
     .checkout-wrapper {
       width: 100%;
-      max-width: 480px;
-      perspective: 1000px;
+      max-width: 440px;
     }
 
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--card-bg);
       border-radius: var(--radius);
-      padding: 32px;
-      box-shadow: var(--shadow);
-      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      padding: 24px;
     }
 
+    /* Cabecera Estilo MP */
     header {
-      text-align: center;
-      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
     }
 
-    header h1 {
-      font-size: 24px;
-      font-weight: 400;
-      color: var(--accent);
-      letter-spacing: -0.5px;
-      margin-bottom: 4px;
+    header .title-area h1 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
     }
 
-    header p {
-      font-size: 13px;
-      color: var(--muted);
-      font-family: 'Arial', sans-serif;
+    header .title-area p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
     }
 
-    /* ── Resumen de Orden ──────────────────────────────────────────────── */
+    header .mp-badge {
+      font-size: 11px;
+      background: #e4f0fa;
+      color: #2968c4;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Resumen de Monto */
     .order-summary {
-      background: rgba(200, 169, 110, 0.03);
-      border: 1px dashed var(--border);
-      border-radius: calc(var(--radius) - 4px);
-      padding: 16px;
-      margin-bottom: 24px;
-      font-family: 'Arial', sans-serif;
-    }
-
-    .summary-row {
+      background: #f9f9f9;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border: 1px solid var(--border);
+    }
+
+    .summary-label {
       font-size: 14px;
+      color: #666666;
     }
 
-    .summary-row .total-label { color: var(--muted); }
-    .summary-row .total-amount {
-      font-size: 20px;
-      color: var(--accent2);
-      font-family: 'Georgia', serif;
+    .summary-amount {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-main);
     }
 
-    /* ── Formulario ────────────────────────────────────────────────────── */
+    /* Estilos del Formulario */
     .form-group {
-      margin-bottom: 18px;
-      font-family: 'Arial', sans-serif;
+      margin-bottom: 16px;
     }
 
-    .form-group.half {
-      width: calc(50% - 8px);
-      display: inline-block;
-    }
     .form-row {
       display: flex;
-      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
     }
 
     label {
       display: block;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
+      font-size: 13px;
+      color: #333333;
       margin-bottom: 6px;
-      font-weight: 600;
     }
 
-    /* Contenedores para MP Secure Fields */
+    /* Contenedores para Campos Seguros e Inputs Tradicionales */
     .mp-input-container, input, select {
       width: 100%;
-      height: 46px;
-      background: #151412;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      padding: 0 14px;
-      font-size: 14px;
-      transition: all 0.2s ease;
+      height: 44px;
+      background-color: #ffffff;
+      border: 1px solid #cccccc;
+      border-radius: var(--radius);
+      color: #333333;
+      padding: 0 12px;
+      font-size: 15px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
       display: flex;
       align-items: center;
     }
 
     input:focus, select:focus {
-      border-color: var(--accent);
+      border-color: var(--mp-blue);
       outline: none;
-      box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.1);
+      box-shadow: 0 0 0 2px rgba(0, 158, 227, 0.2);
     }
 
+    /* Ajuste para select nativo */
     select {
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237a7468' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C</svg>");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23666666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: calc(100% - 14px) center;
       cursor: pointer;
     }
 
-    /* Cuotas destacadas */
-    select#form-checkout__installments {
-      border-color: rgba(200, 169, 110, 0.4);
-      background-color: rgba(200, 169, 110, 0.02);
-      color: var(--accent2);
-      font-weight: 500;
-    }
-
-    /* Botón de Acción */
+    /* Botón Oficial de Mercado Pago */
     .btn {
       width: 100%;
-      height: 50px;
-      background: var(--accent);
+      height: 48px;
+      background-color: var(--mp-blue);
       border: none;
-      border-radius: 6px;
-      color: var(--bg);
-      font-size: 15px;
+      border-radius: var(--radius);
+      color: #ffffff;
+      font-size: 16px;
       font-weight: 600;
-      font-family: 'Arial', sans-serif;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
 
     .btn:hover:not(:disabled) {
-      background: var(--accent2);
-      transform: translateY(-1px);
+      background-color: #0080b7;
     }
 
     .btn:disabled {
-      background: var(--border);
-      color: var(--muted);
+      background-color: #e6e6e6;
+      color: #a6a6a6;
       cursor: not-allowed;
     }
 
-    /* ── Mensajes y Loaders ────────────────────────────────────────────── */
+    /* Mensajes de Alerta */
     .error-box {
-      background: rgba(224, 92, 92, 0.08);
-      border: 1px solid rgba(224, 92, 92, 0.2);
+      background: #fef0f1;
+      border: 1px solid #fcc2c7;
       color: var(--error);
-      padding: 14px;
-      border-radius: 6px;
+      padding: 12px;
+      border-radius: var(--radius);
       font-size: 13px;
-      font-family: 'Arial', sans-serif;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       display: none;
     }
 
     .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(0,0,0,0.1);
-      border-top-color: currentColor;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -219,127 +210,132 @@
 <div class="checkout-wrapper" id="checkout-screen">
   <div class="card">
     <header>
-      <h1>Finalizar Compra</h1>
-      <p>Pasarela de pago cifrado y protegido</p>
+      <div class="title-area">
+        <h1>Ingresa los datos de tu tarjeta</h1>
+        <p>Transacción segura cifrada</p>
+      </div>
+      <span class="mp-badge">Mercado Pago</span>
     </header>
 
     <div id="error-msg" class="error-box"></div>
 
-    <div id="loading-cart" style="text-align: center; padding: 20px 0; color: var(--muted); font-family: Arial, sans-serif;">
-      <span class="spinner" style="display:inline-block; margin-bottom:10px; border-top-color:var(--accent);"></span>
-      <p>Sincronizando los datos de tu orden...</p>
-    </div>
-
-    <div id="checkout-content" style="display: none;">
+    <div id="checkout-content">
       <div class="order-summary">
-        <div class="summary-row">
-          <span class="total-label">Monto total a pagar:</span>
-          <span class="total-amount" id="total-price-display">S/ 0.00</span>
-        </div>
+        <span class="summary-label">Total a pagar:</span>
+        <span class="summary-amount" id="total-price-display">S/ 0.00</span>
       </div>
 
       <form id="form-checkout">
         <div class="form-group">
-          <label for="form-checkout__cardNumber">Número de tarjeta</label>
+          <label>Número de tarjeta</label>
           <div id="form-checkout__cardNumber" class="mp-input-container"></div>
         </div>
 
         <div class="form-row">
-          <div class="form-group half">
-            <label for="form-checkout__expirationDate">Vencimiento</label>
+          <div class="form-group">
+            <label>Vencimiento</label>
             <div id="form-checkout__expirationDate" class="mp-input-container"></div>
           </div>
-          <div class="form-group half">
-            <label for="form-checkout__securityCode">CVV</label>
+          <div class="form-group">
+            <label>Código de seguridad (CVV)</label>
             <div id="form-checkout__securityCode" class="mp-input-container"></div>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="form-checkout__cardholderName">Titular de la tarjeta</label>
-          <input type="text" id="form-checkout__cardholderName" placeholder="Como figura en el plástico" required />
+          <label for="form-checkout__cardholderName">Nombre del titular</label>
+          <input type="text" id="form-checkout__cardholderName" placeholder="Como figura en la tarjeta" required />
         </div>
 
         <div class="form-row">
-          <div class="form-group half">
-            <label for="form-checkout__identificationType">Tipo Doc.</label>
+          <div class="form-group">
+            <label for="form-checkout__identificationType">Tipo de documento</label>
             <select id="form-checkout__identificationType" required></select>
           </div>
-          <div class="form-group half">
-            <label for="form-checkout__identificationNumber">N° Documento</label>
+          <div class="form-group">
+            <label for="form-checkout__identificationNumber">Número de documento</label>
             <input type="text" id="form-checkout__identificationNumber" placeholder="Número" required />
           </div>
         </div>
 
         <div class="form-group">
-          <label for="form-checkout__cardholderEmail">Correo Electrónico</label>
+          <label for="form-checkout__cardholderEmail">E-mail</label>
           <input type="email" id="form-checkout__cardholderEmail" placeholder="ejemplo@correo.com" required />
         </div>
 
         <div class="form-row">
-          <div class="form-group half">
-            <label for="form-checkout__issuer">Banco Emisor</label>
-            <select id="form-checkout__issuer" required><option value="" disabled selected>Banco</option></select>
+          <div class="form-group">
+            <label for="form-checkout__issuer">Banco emisor</label>
+            <select id="form-checkout__issuer" required>
+              <option value="" disabled selected>Selecciona el banco</option>
+            </select>
           </div>
-          <div class="form-group half">
-            <label for="form-checkout__installments">Cuotas sin Interés</label>
+          <div class="form-group">
+            <label for="form-checkout__installments">Cuotas disponibles</label>
             <select id="form-checkout__installments" required>
-              <option value="" disabled selected>Opciones</option>
+              <option value="" disabled selected>Ingresa tu tarjeta...</option>
             </select>
           </div>
         </div>
 
-        <button type="submit" id="pay-btn" class="btn">Pagar orden</button>
+        <button type="submit" id="pay-btn" class="btn">Pagar</button>
       </form>
     </div>
   </div>
 </div>
 
 <script>
-  // 🛠️ LLAVES DE ACCESO MERCADO PAGO
-  // Recuerda poner aquí tu clave de pruebas "TEST-..." para Sandbox.
-  const MP_PUBLIC_KEY = 'APP_USR-25809e5a-da1e-4db7-a54d-71ba93c9fa29'; 
+  // 🛠️ CONFIGURACIÓN DE LAS LLAVES DE PRUEBA
+ const MP_PUBLIC_KEY = 'APP_USR-25809e5a-da1e-4db7-a54d-71ba93c9fa29';
   const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' });
   
   let totalAmount = 0;
 
-    
   document.addEventListener('DOMContentLoaded', async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const datosUrl = urlParams.get('data');
+    const urlParams = new URLSearchParams(window.location.search);
+    const datosUrl = urlParams.get('data');
 
-      if (!datosUrl) {
-        mostrarErrorFatal("No se recibieron datos de compra válidos desde el carrito de Shopify.");
-        return;
-      }
+    if (!datosUrl) {
+      mostrarErrorFatal("No se recibieron datos válidos de compra.");
+      return;
+    }
 
-      try {
-        // Decodificar los datos del carrito recibidos directamente de la URL
-        const jsonDecodificado = decodeURIComponent(escape(atob(datosUrl)));
-        const cartData = JSON.parse(jsonDecodificado);
-        
-        totalAmount = cartData.total_price;
+    try {
+      // Decodificación directa del payload Base64 transportado de Shopify
+      const jsonDecodificado = decodeURIComponent(escape(atob(datosUrl)));
+      const cartData = JSON.parse(jsonDecodificado);
+      
+      totalAmount = cartData.total_price;
+      document.getElementById('total-price-display').innerText = `S/ ${totalAmount.toFixed(2)}`;
 
-        // Actualizar vista del precio e inicializar Mercado Pago inmediatamente
-        document.getElementById('total-price-display').innerText = `S/ ${totalAmount.toFixed(2)}`;
-        document.getElementById('loading-cart').style.display = 'none';
-        document.getElementById('checkout-content').style.display = 'block';
+      inicializarCamposSeguros();
 
-        // Arrancar pasarela de pago
-        inicializarCamposSeguros();
-
-      } catch (err) {
-        mostrarErrorFatal("Error al procesar la información del pedido de la URL.");
-      }
-    });
+    } catch (err) {
+      mostrarErrorFatal("Error al procesar la información del pedido.");
+    }
+  });
 
   function inicializarCamposSeguros() {
-    // Montar elementos protegidos del SDK v2 en los divs contenedores
-    const cardNumber = mp.fields.create('cardNumber', { placeholder: "0000 0000 0000 0000" }).mount('form-checkout__cardNumber');
-    const expirationDate = mp.fields.create('expirationDate', { placeholder: "MM/AA" }).mount('form-checkout__expirationDate');
-    const securityCode = mp.fields.create('securityCode', { placeholder: "CVV" }).mount('form-checkout__securityCode');
+    // 🌟 ESTILIZACIÓN DE TEXTO PARA QUE SE VEA OSCURO AL ESCRIBIR DENTRO DEL IFRAME DE MP
+    const estiloCamposMP = {
+      style: {
+        input: {
+          'font-size': '15px',
+          'color': '#333333', // <-- Forzamos color oscuro para el texto ingresado
+          'font-family': 'Helvetica Neue, Arial, sans-serif',
+          'placeholder': {
+            'color': '#999999'
+          }
+        }
+      }
+    };
 
-    // Cargar documentos autorizados de Perú (DNI, CE, etc.)
+    // Montar campos protegidos aplicando los estilos oscuros
+    const cardNumber = mp.fields.create('cardNumber', estiloCamposMP).mount('form-checkout__cardNumber');
+    const expirationDate = mp.fields.create('expirationDate', estiloCamposMP).mount('form-checkout__expirationDate');
+    const securityCode = mp.fields.create('securityCode', estiloCamposMP).mount('form-checkout__securityCode');
+
+    // Cargar documentos válidos para Perú de Mercado Pago
     (async function cargarDocumentos() {
       try {
         const docTypes = await mp.getIdentificationTypes();
@@ -352,13 +348,13 @@
       } catch (e) { console.error("Error obteniendo documentos:", e); }
     })();
 
-    // Monitorear los primeros dígitos para calcular bancos y cuotas admitidas
+    // Escuchar el cambio de número de tarjeta (BIN) para calcular Bancos y Cuotas Estrictas
     cardNumber.on('bin_change', async (data) => {
       const bin = data.bin;
       if (!bin) return;
 
       try {
-        // Cargar bancos emisores
+        // 1. Cargar e Inyectar Bancos Emisores
         const issuers = await mp.getIssuers({ bin });
         const selectIssuer = document.getElementById('form-checkout__issuer');
         selectIssuer.innerHTML = '';
@@ -368,7 +364,7 @@
           selectIssuer.appendChild(o);
         });
 
-        // Obtener planes de cuotas generales del sistema bancario
+        // 2. Obtener los planes de pago y filtrar solo 3, 6 y 12 cuotas
         const installmentsInfo = await mp.getInstallments({ bin, amount: totalAmount.toString() });
         const selectInstallments = document.getElementById('form-checkout__installments');
         selectInstallments.innerHTML = '';
@@ -376,28 +372,29 @@
         if (installmentsInfo.length > 0) {
           const rawCosts = installmentsInfo[0].payer_costs;
           
-          // 🛡️ REGLA ESTRICTA: Filtrar únicamente cuotas de 3, 6 y 12 meses
-          const promoCosts = rawCosts.filter(c => [3, 6, 12].includes(c.installments));
+          // 🛡️ REGLA ESTRICTA DE CUOTAS SOLICITADA (3, 6 y 12 meses sin interés)
+          const cuotasPermitidas = rawCosts.filter(c => [3, 6, 12].includes(c.installments));
 
-          if (promoCosts.length > 0) {
-            promoCosts.forEach(c => {
+          if (cuotasPermitidas.length > 0) {
+            // Pintar las opciones de 3, 6 o 12 meses
+            cuotasPermitidas.forEach(c => {
               let o = document.createElement('option');
               o.value = c.installments;
-              o.textContent = `${c.installments} x S/ ${(totalAmount / c.installments).toFixed(2)} sin interés`;
+              o.textContent = `${c.installments} cuotas sin interés de S/ ${(totalAmount / c.installments).toFixed(2)}`;
               selectInstallments.appendChild(o);
             });
           } else {
-            // Fallback si la tarjeta de débito/crédito no cuenta con financiamiento extendido en MP
+            // Opción en 1 solo pago por si es tarjeta de débito o no califica al financiamiento extendido
             let o = document.createElement('option');
             o.value = "1";
-            o.textContent = `1 pago de S/ ${totalAmount.toFixed(2)}`;
+            o.textContent = `1 pago único de S/ ${totalAmount.toFixed(2)}`;
             selectInstallments.appendChild(o);
           }
         }
       } catch (error) { console.error("Error configurando cuotas:", error); }
     });
 
-    // Controlar el evento de envío y tokenización de tarjeta
+    // Enviar el formulario y tokenizar la tarjeta de crédito
     const form = document.getElementById('form-checkout');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -405,7 +402,6 @@
       setLoading(true);
 
       try {
-        // Enviar datos de forma segura para generar el CardToken temporal
         const cardToken = await mp.createCardToken({
           cardholderName: document.getElementById('form-checkout__cardholderName').value,
           identificationType: document.getElementById('form-checkout__identificationType').value,
@@ -413,9 +409,9 @@
           cardholderEmail: document.getElementById('form-checkout__cardholderEmail').value
         });
 
-        if (!cardToken.id) throw new Error("Los datos de la tarjeta no pudieron ser validados por la pasarela.");
+        if (!cardToken.id) throw new Error("Los datos de la tarjeta no pudieron ser validados.");
 
-        // Construcción de la carga hacia nuestro backend en Vercel
+        // Generar payload estructurado para la API del backend
         const transactionPayload = {
           token: cardToken.id,
           installments: document.getElementById('form-checkout__installments').value,
@@ -439,11 +435,11 @@
         const paymentResult = await serverResponse.json();
 
         if (paymentResult.status === 'approved') {
-          alert("¡Pago aprobado de forma exitosa!");
+          alert("¡Pago aprobado con éxito!");
           window.location.href = '/checkout/order-received';
         } else {
           setLoading(false);
-          mostrarError(`Transacción declinada: ${paymentResult.message}`);
+          mostrarError(`Transacción declinada: ${paymentResult.message || 'Intente con otra tarjeta.'}`);
         }
 
       } catch (err) {
@@ -456,7 +452,7 @@
   function setLoading(loading) {
     const btn = document.getElementById('pay-btn');
     btn.disabled = loading;
-    btn.innerHTML = loading ? `<span class="spinner"></span> Procesando...` : `Pagar orden`;
+    btn.innerHTML = loading ? `<span class="spinner"></span> Procesando...` : `Pagar`;
   }
 
   function mostrarError(msg) {
@@ -470,11 +466,10 @@
   }
 
   function mostrarErrorFatal(msg) {
-    document.getElementById('loading-cart').style.display = 'none';
     document.getElementById('checkout-screen').innerHTML = `
       <div class="card" style="text-align:center; padding:40px 20px;">
         <div style="font-size:40px; margin-bottom:12px;">⚠️</div>
-        <div style="color:var(--error); font-size:15px; font-family:Arial, sans-serif;">${msg}</div>
+        <div style="color:var(--error); font-size:14px;">${msg}</div>
       </div>`;
   }
 </script>
